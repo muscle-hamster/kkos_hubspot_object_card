@@ -1,0 +1,5 @@
+{
+  "proxy": {
+    "https://dev.intake.local": "http://localhost:8082"
+  }
+}

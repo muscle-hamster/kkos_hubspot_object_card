@@ -1,0 +1,8 @@
+{
+  "name": "scoped_intake_view",
+  "srcDir": "src",
+  "platformVersion": "2025.2",
+  "locations": {
+    "functions": "app.functions"
+  }
+}

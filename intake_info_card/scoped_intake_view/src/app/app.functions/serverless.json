@@ -1,0 +1,11 @@
+{
+  "appFunctions": {
+     "functionName": {
+      "file": "hello.js",
+      "secrets": [],
+      "endpoint": {
+        "path": "hello",
+        "method": ["GET"]
+       }
+    }
+  }

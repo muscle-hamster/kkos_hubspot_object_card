@@ -1,0 +1,17 @@
+{
+  "extensions": {
+    "crm": {
+      "cards": [
+        {
+          "uid": "intake-actions-card",
+          "title": "Intake Actions",
+          "location": "crm.record.sidebar",
+          "objectTypes": [
+            { "objectTypeId": "0-3" }
+          ],
+          "module": { "file": "src/app.js" }
+        }
+      ]
+    }
+  }
+}
