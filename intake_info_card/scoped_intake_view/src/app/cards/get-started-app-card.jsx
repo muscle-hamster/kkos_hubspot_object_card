@@ -40,69 +40,6 @@ const portalId = context?.portalId;
 
 const [assocApi, setAssocApi] = useState({ ok: null, json: null, error: null });
 
-// 🔎 call the same endpoint your curl does, but through the extension's auth
-// useEffect(() => {
-//   (async () => {
-//     if (!dealId || dealTypeId !== '0-3') return;
-//     try {
-//       const res = await hubspot.fetch(
-//         `https://api.hubapi.com/crm/v4/objects/0-3/${dealId}/associations/2-48847550`,
-//         { method: 'GET' }
-//       );
-//
-//         const status = res.status;
-//         const statusText = res.statusText;
-//         const bodyText = await res.text(); // many HubSpot errors are JSON
-//         let json = null; try { json = bodyText ? JSON.parse(bodyText) : null; } catch {}
-//         setAssocApi({ ok: res.ok, json, error: null, status, statusText, bodyText });
-//       } catch (e) {
-//         setAssocApi({ ok: false, json: null, error: String(e) });
-//       }
-//   })();
-// }, [dealId, dealTypeId]);
-
-// function AssocProbe({ typeId = 83 }) {
-//   // try 1: canonical
-//   const a1 = useAssociations({
-//     objectTypeId: "2-48847550",
-//     // associationTypeIds: [typeId],   // number
-//     limit: 25,
-//   });
-//
-//   // try 2: typeId as string (some builds expect string ids)
-//   const a2 = useAssociations({
-//     objectTypeId: "2-48847550",
-//     associationTypeIds: [String(typeId)], // string
-//     limit: 25,
-//   });
-//
-//   // try 3: alternate param name seen in some SDK versions
-//   const a3 = useAssociations({
-//     toObjectTypeId: "2-48847550",
-//     associationTypeIds: [typeId],
-//     limit: 25,
-//   });
-//
-//   // try 4: no type filter at all (return anything available)
-//   const a4 = useAssociations({
-//     objectTypeId: "2-48847550",
-//     limit: 25,
-//   });
-//
-//   return (
-//     <>
-//       <Divider />
-//       <Text muted>AssocProbe (typeId: {String(typeId)})</Text>
-//
-//       <Text>try1 objectTypeId + numeric typeId → len: {a1?.results?.length ?? 0} err: {a1?.error ? JSON.stringify(a1.error) : "null"}</Text>
-//       <Text>try2 objectTypeId + string  typeId → len: {a2?.results?.length ?? 0} err: {a2?.error ? JSON.stringify(a2.error) : "null"}</Text>
-//       <Text>try3 toObjectTypeId + numeric typeId → len: {a3?.results?.length ?? 0} err: {a3?.error ? JSON.stringify(a3.error) : "null"}</Text>
-//       <Text>try4 no filter (objectTypeId only) → len: {a4?.results?.length ?? 0} err: {a4?.error ? JSON.stringify(a4.error) : "null"}</Text>
-//
-//       <Divider />
-//     </>
-//   );
-// }
   // Get CRM properties
   const { properties, isLoading, error } = useCrmProperties(['intake_name', 'intake_form_type']);
   const { results: assocResults = [], loading: assocLoading, error: assocError } =
@@ -122,7 +59,7 @@ const [assocApi, setAssocApi] = useState({ ok: null, json: null, error: null });
 
   // safe guards
   let formType = null, entityType = null, documentPacketId = null,
-  assocObjId = null, docgenFolderId = null, customerBoxAccountId = null;
+  assocObjId = null, docgenFolderId = null, customerBoxAccountId = null, envelopeId = null;
 
   // if (assocResults?.length) {
   //   const p = assocResults[0].properties || {};
@@ -174,6 +111,7 @@ console.log('assocResults', assocResults);
     assocObjId = assocResults[0].properties.hs_object_id
     docgenFolderId = assocResults[0].properties.docgen_folder_id
     customerBoxAccountId = assocResults[0].properties.customer_box_account_id
+    envelopeId = assocResults[0].properties.docusign_envelope_id
   }
 
   console.log('documentPacketId: ', documentPacketId)
@@ -250,21 +188,8 @@ console.log('assocResults', assocResults);
         disabled={!customerBoxAccountId}
         onClick={async () => {
           try {
-            // const res = await hubspot.fetch(
-            //   'https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/generate',
-            //   {
-            //     method: 'POST',
-            //     body: {
-            //       intakeId: String(assocObjId),
-            //       formType: formType,
-            //       entityType,
-            //       docgenFolderId,
-            //       boxFolderId: String(customerBoxAccountId),
-            //     },
-            //   }
-            // );
             const res = await hubspot.fetch(
-              'https://kkos.developernews.tech/api/v1/intake/packet/generate',
+              'https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/generate',
               {
                 method: 'POST',
                 body: {
@@ -276,6 +201,19 @@ console.log('assocResults', assocResults);
                 },
               }
             );
+            // const res = await hubspot.fetch(
+            //   'https://kkos.developernews.tech/api/v1/intake/packet/generate',
+            //   {
+            //     method: 'POST',
+            //     body: {
+            //       intakeId: String(assocObjId),
+            //       formType: formType,
+            //       entityType,
+            //       docgenFolderId,
+            //       boxFolderId: String(customerBoxAccountId),
+            //     },
+            //   }
+            // );
 
             // read body once (handles 200/201/204)
             let raw = '';
@@ -325,10 +263,11 @@ console.log('assocResults', assocResults);
               {
                 method: 'POST',
                 body: {
-                  intakeId: String(objectId),
+                  intakeId: String(assocObjId),
                   formType,
                   documentPacketId,
                   boxFolderId: String(customerBoxAccountId),
+                  envelopeId,
                 },
               }
             );
@@ -337,10 +276,11 @@ console.log('assocResults', assocResults);
             //   {
             //     method: 'POST',
             //     body: {
-            //       intakeId: String(objectId),
+            //       intakeId: String(assocObjId),
             //       formType,
             //       documentPacketId,
             //       boxFolderId: String(customerBoxAccountId),
+            //       envelopeId,
             //     },
             //   }
             // );
