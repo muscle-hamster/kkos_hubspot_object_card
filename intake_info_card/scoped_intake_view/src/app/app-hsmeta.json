@@ -3,7 +3,7 @@
   "type": "app",
   "config": {
     "description": "A basic static token app for testing",
-    "name": "My Get Started app",
+    "name": "Doc Gen Card",
     "distribution": "private",
     "auth": {
       "type": "static",

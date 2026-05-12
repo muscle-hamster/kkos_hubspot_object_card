@@ -3,8 +3,6 @@
   "type": "card",
   "permittedUrls": {
     "fetch": [
-      "https://api.hubapi.com/",
-      "https://httpbin.org/get",
       "https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/generate",
       "https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/signature",
       "https://kkos.developernews.tech/api/v1/intake/packet/signature",
@@ -14,10 +12,10 @@
     "img": []
   },
   "config": {
-    "name": "Get Started App Card",
+    "name": "Doc Gen App Card",
     "description": "Provides detailed information about a contact.",
     "entrypoint": "/app/cards/get-started-app-card.jsx",
     "location": "crm.record.tab",
-    "objectTypes": [ "CONTACT", "DEALS" ]
+    "objectTypes": [ "contacts", "deals" ]
   }
 }

@@ -6,7 +6,8 @@ const BASE = [
   'intake_form_type',
   'entity_type',
   'document_packet_id',
-  'customer_box_account_id'
+  'customer_box_account_id',
+  'billing_notes',
 ]
 
 export const PROPERTY_SETS = {
@@ -44,12 +45,9 @@ export const PROPERTY_SETS = {
       'notes',
     ]
   },
-  llc_ira: {
+  ira_llc: {
     properties: [
       ...BASE,
-      'tax_advisor_company',
-      'tax_advisor_email',
-      'tax_advisor_name',
       'effective_date',
       'entity_name',
       'entity_state_of_registration',
@@ -59,11 +57,6 @@ export const PROPERTY_SETS = {
       'physical_addr_city',
       'physical_addr_state',
       'physical_addr_postal',
-      'mailing_addr_line1',
-      'mailing_addr_line2',
-      'mailing_addr_city',
-      'mailing_addr_state',
-      'mailing_addr_postal',
       'deed_transfer_needed',
       'msbs_services',
       'msbs_already_paid',
@@ -172,7 +165,7 @@ export const PROPERTY_SETS = {
       'notes',
     ]
   },
-  membership_transfer: {
+  transfer: {
     properties: [
       ...BASE,
       'contact_full_name',

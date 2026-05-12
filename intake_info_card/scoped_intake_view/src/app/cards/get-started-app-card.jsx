@@ -9,7 +9,6 @@ import {
   ButtonRow,
   hubspot,
 } from "@hubspot/ui-extensions";
-
 import { getPropertySet } from './configs/properties.js';
 import { CrmPropertyList, useCrmProperties, useAssociations, CrmActionButton, CrmCardActions } from '@hubspot/ui-extensions/crm';
 
@@ -42,9 +41,9 @@ const [assocApi, setAssocApi] = useState({ ok: null, json: null, error: null });
 
   // Get CRM properties
   const { properties, isLoading, error } = useCrmProperties(['intake_name', 'intake_form_type']);
-  const { results: assocResults = [], loading: assocLoading, error: assocError } =
-  useAssociations({
-    toObjectType: '2-48847550',
+  const { results: assocResults = [], loading: assocLoading, error: assocError } = useAssociations({
+    // toObjectType: '2-48847550', //Staging
+    toObjectType: 'p_intake',
     // associationTypeIds: [177],
     properties: [
       'intake_form_type',
@@ -61,39 +60,9 @@ const [assocApi, setAssocApi] = useState({ ok: null, json: null, error: null });
   let formType = null, entityType = null, documentPacketId = null,
   assocObjId = null, docgenFolderId = null, customerBoxAccountId = null, envelopeId = null;
 
-  // if (assocResults?.length) {
-  //   const p = assocResults[0].properties || {};
-  //   formType = p.intake_form_type ?? null;
-  //   entityType = p.entity_type ?? null;
-  //   documentPacketId = p.document_packet_id ?? null;
-  //   assocObjId = p.hs_object_id ?? null;
-  //   docgenFolderId = p.docgen_folder_id ?? null;
-  //   customerBoxAccountId = p.customer_box_account_id ?? null;
-  // }
-
 console.log('assocResults', assocResults);
-  // const { results: assocResults } = useAssociations({
-  //   'objectTypeId': '2-48847550',
-  //   'properties': [
-  //     'intake_form_type',
-  //     // 'hs_object_id',
-  //     // 'customer_box_account_id',
-  //     // 'document_packet_id',
-  //     // 'entity_type',
-  //     // 'docgen_folder_id'
-  //   ],
-  //   associationTypeIds: [83],
-  // });
-  // const { results: assocResults } = useAssociations({
-  //   'toObjectType': '2-48847550',
-  //   'properties': [
-  //     'intake_form_type',
-  //     'hs_object_id',
-  //     'customer_box_account_id',
-  //     'document_packet_id',
-  //     'entity_type',
-  //     'docgen_folder_id'
-  //   ]});
+console.log('assocErrors', assocError);
+console.log('assocLoading', assocLoading);
   console.log('properties', properties)
 
   //TODO: If no formtype set send error that is easy to understand
@@ -111,7 +80,7 @@ console.log('assocResults', assocResults);
     assocObjId = assocResults[0].properties.hs_object_id
     docgenFolderId = assocResults[0].properties.docgen_folder_id
     customerBoxAccountId = assocResults[0].properties.customer_box_account_id
-    envelopeId = assocResults[0].properties.docusign_envelope_id
+    // envelopeId = assocResults[0].properties.docusign_envelope_id
   }
 
   console.log('documentPacketId: ', documentPacketId)
@@ -125,8 +94,10 @@ console.log('assocResults', assocResults);
   console.log("CARD BUILD", BUILD_ID);
   // console.log('assoc crm properties: ', assocCrmProperties);
 
-  const objectId = context.objectId || 41361674390;
-  const objectTypeId = context.objectTypeId || '2-48847550';
+  // const objectId = context.objectId || 41361674390;
+  const objectId = context.objectId
+  // const objectTypeId = context.objectTypeId || '2-48847550';
+  const objectTypeId = context.objectTypeId || '2-57729126';
   const fromObjectId = objectId;
   const fromTypeId = objectTypeId;
 
@@ -141,27 +112,8 @@ console.log('assocResults', assocResults);
   return (
     <>
 <Divider />
-{/* <Flex direction="column" gap="xsmall"> */}
-{/*   <Text muted>Debug</Text> */}
-{/*   <Text>portalId: {String(portalId)}</Text> */}
-{/*   <Text>dealTypeId: {String(dealTypeId)}</Text> */}
-{/*   <Text>dealId: {String(dealId)}</Text> */}
-{/**/}
-{/*   <Text>useAssociations.loading: {String(assocLoading)}</Text> */}
-{/*   <Text>useAssociations.error: {assocError ? JSON.stringify(assocError) : 'null'}</Text> */}
-{/*   <Text>useAssociations.results length: {assocResults?.length ?? 0}</Text> */}
-{/**/}
-{/*   <Text>REST ok: {String(assocApi.ok)}</Text> */}
-{/*   <Text>REST json: {assocApi.json ? JSON.stringify(assocApi.json) : 'null'}</Text> */}
-{/*   <Text>REST error: {assocApi.error ?? 'null'}</Text> */}
-{/* </Flex> */}
-{/* <Divider /> */}
       <Flex direction="column" gap="medium">
-        <Text>Hello from the HubSpot CRM!</Text>
         <Text>Current object ID: {objectId}</Text>
-        {/* <Text>Current text: {text}</Text> */}
-        {/* <Button onClick={callHello}>Call Hello Function</Button> */}
-        {/* <Button onClick={callGetAssociations}>Get Associations</Button> */}
         {associations && (
           <Flex direction="column" gap="small">
             <Text>Associations found:</Text>
@@ -170,39 +122,28 @@ console.log('assocResults', assocResults);
         )}
       </Flex>
       
-      <CrmCardActions
-        actionConfigs={[
-          {
-            type: 'action-library-button',
-            label: 'Open Intake',
-            actionType: 'EXTERNAL_URL',
-            actionContext: {
-              href: `https://kkos.developernews.tech/forms/intake/${assocObjId}`,
+      {assocObjId && (
+        <CrmCardActions
+          actionConfigs={[
+            {
+              type: 'action-library-button',
+              label: 'Open Intake',
+              actionType: 'EXTERNAL_URL',
+              actionContext: {
+                href: `https://kkos.developernews.tech/forms/intake/${assocObjId}`,
+              },
+              tooltipText: 'Open intake form',
             },
-            tooltipText: 'Open intake form',
-          },
-        ]}
-      />
+          ]}
+        />
+      )}
       <Button
         variant="primary"
         disabled={!customerBoxAccountId}
         onClick={async () => {
           try {
-            const res = await hubspot.fetch(
-              'https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/generate',
-              {
-                method: 'POST',
-                body: {
-                  intakeId: String(assocObjId),
-                  formType: formType,
-                  entityType,
-                  docgenFolderId,
-                  boxFolderId: String(customerBoxAccountId),
-                },
-              }
-            );
             // const res = await hubspot.fetch(
-            //   'https://kkos.developernews.tech/api/v1/intake/packet/generate',
+            //   'https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/generate',
             //   {
             //     method: 'POST',
             //     body: {
@@ -214,6 +155,19 @@ console.log('assocResults', assocResults);
             //     },
             //   }
             // );
+            const res = await hubspot.fetch(
+              'https://kkos.developernews.tech/api/v1/intake/packet/generate',
+              {
+                method: 'POST',
+                body: {
+                  intakeId: String(assocObjId),
+                  formType: formType,
+                  entityType,
+                  docgenFolderId,
+                  boxFolderId: String(customerBoxAccountId),
+                },
+              }
+            );
 
             // read body once (handles 200/201/204)
             let raw = '';
@@ -258,21 +212,8 @@ console.log('assocResults', assocResults);
         variant="primary"
         onClick={async () => {
           try {
-            const res = await hubspot.fetch(
-              'https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/signature',
-              {
-                method: 'POST',
-                body: {
-                  intakeId: String(assocObjId),
-                  formType,
-                  documentPacketId,
-                  boxFolderId: String(customerBoxAccountId),
-                  envelopeId,
-                },
-              }
-            );
             // const res = await hubspot.fetch(
-            //   'https://kkos.developernews.tech/api/v1/intake/packet/signature',
+            //   'https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/signature',
             //   {
             //     method: 'POST',
             //     body: {
@@ -284,6 +225,19 @@ console.log('assocResults', assocResults);
             //     },
             //   }
             // );
+            const res = await hubspot.fetch(
+              'https://kkos.developernews.tech/api/v1/intake/packet/signature',
+              {
+                method: 'POST',
+                body: {
+                  intakeId: String(assocObjId),
+                  formType,
+                  documentPacketId,
+                  boxFolderId: String(customerBoxAccountId),
+                  // envelopeId,
+                },
+              }
+            );
 
             let raw = '';
             try {
@@ -317,7 +271,7 @@ console.log('assocResults', assocResults);
           }
         }}
       >
-        Send To Docusign
+        Request Signature(s)
       </Button>
       <Divider />
       
@@ -329,7 +283,8 @@ console.log('assocResults', assocResults);
                 <Text muted>Section {idx + 1} of {propChunks.length}</Text>
               )}
               <CrmPropertyList
-                objectTypeId="2-48847550"
+                // objectTypeId="2-48847550" Staging
+                objectTypeId="2-57729126"
                 objectId={assocObjId}
                 properties={props}
                 direction="row"
