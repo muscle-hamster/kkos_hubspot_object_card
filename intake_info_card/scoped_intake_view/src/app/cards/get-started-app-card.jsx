@@ -122,7 +122,7 @@ console.log('assocLoading', assocLoading);
         )}
       </Flex>
       
-      {assocObjId && (
+      {assocObjId ? (
         <CrmCardActions
           actionConfigs={[
             {
@@ -136,6 +136,49 @@ console.log('assocLoading', assocLoading);
             },
           ]}
         />
+      ) : (
+        <Flex direction="column" gap="small">
+          <Text format={{ fontWeight: 'bold' }}>No intake record associated with this deal.</Text>
+          <Button
+            variant="primary"
+            onClick={async () => {
+              try {
+                const res = await hubspot.fetch(
+                  'https://kkos.developernews.tech/api/v1/intake/create',
+                  {
+                    method: 'POST',
+                    body: {
+                      dealId: String(dealId),
+                      portalId: String(portalId),
+                    },
+                  }
+                );
+
+                let raw = '';
+                try {
+                  raw = await res.text();
+                } catch (e) {
+                  raw = '';
+                }
+
+                if (!res.ok) {
+                  const msg = `Server error: ${res.status}${raw ? ` – ${raw}` : ''}`;
+                  throw new Error(msg);
+                }
+
+                sendAlert({
+                  type: 'success',
+                  message: 'Intake record created and associated. Refresh the card to continue.',
+                });
+              } catch (err) {
+                console.error(err);
+                sendAlert({ type: 'danger', message: err.message });
+              }
+            }}
+          >
+            Create Intake
+          </Button>
+        </Flex>
       )}
       <Button
         variant="primary"

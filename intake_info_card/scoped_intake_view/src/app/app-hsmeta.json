@@ -25,7 +25,8 @@
         "https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/generate",
         "https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/signature",
         "https://kkos.developernews.tech/api/v1/intake/packet/signature",
-        "https://kkos.developernews.tech/api/v1/intake/packet/generate"
+        "https://kkos.developernews.tech/api/v1/intake/packet/generate",
+        "https://kkos.developernews.tech/api/v1/intake/create"
       ],
       "iframe": [],
       "img": []
