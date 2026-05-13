@@ -7,6 +7,7 @@ import {
   Input,
   Flex,
   ButtonRow,
+  LoadingSpinner,
   hubspot,
 } from "@hubspot/ui-extensions";
 import { getPropertySet } from './configs/properties.js';
@@ -17,6 +18,7 @@ hubspot.extend(({ context, actions }) => (
   <Extension
     context={context}
     sendAlert={actions.addAlert}
+    refreshObjectProperties={actions.refreshObjectProperties}
   />
 ));
 
@@ -28,7 +30,7 @@ const chunk = (arr, size) => {
 };
 
 // Define the Extension component, taking in runServerless, context, & sendAlert as props
-const Extension = ({ context, sendAlert }) => {
+const Extension = ({ context, sendAlert, refreshObjectProperties }) => {
   const [text, setText] = useState("Loading...");
   const [associations, setAssociations] = useState(null);
   console.log('context: ', context?.crm?.objectId);
@@ -38,9 +40,25 @@ const dealTypeId = context?.crm?.objectTypeId; // should be '0-3' on deals
 const portalId = context?.portalId;
 
 const [assocApi, setAssocApi] = useState({ ok: null, json: null, error: null });
+const [entityName, setEntityName] = useState('');
+const [intakeName, setIntakeName] = useState('');
+const [defaultsSet, setDefaultsSet] = useState(false);
+const [createdIntakeId, setCreatedIntakeId] = useState(null);
+const [creatingIntake, setCreatingIntake] = useState(false);
+const [generatingPacket, setGeneratingPacket] = useState(false);
+const [requestingSignature, setRequestingSignature] = useState(false);
 
   // Get CRM properties
-  const { properties, isLoading, error } = useCrmProperties(['intake_name', 'intake_form_type']);
+  const { properties, isLoading, error } = useCrmProperties(['intake_name', 'intake_form_type', 'dealname']);
+
+  useEffect(() => {
+    if (!defaultsSet && properties?.dealname) {
+      setEntityName(properties.dealname);
+      setIntakeName(properties.dealname);
+      setDefaultsSet(true);
+    }
+  }, [properties?.dealname, defaultsSet]);
+
   const { results: assocResults = [], loading: assocLoading, error: assocError } = useAssociations({
     // toObjectType: '2-48847550', //Staging
     toObjectType: 'p_intake',
@@ -82,6 +100,7 @@ console.log('assocLoading', assocLoading);
     customerBoxAccountId = assocResults[0].properties.customer_box_account_id
     // envelopeId = assocResults[0].properties.docusign_envelope_id
   }
+
 
   console.log('documentPacketId: ', documentPacketId)
   console.log('associations', assocResults)
@@ -136,186 +155,216 @@ console.log('assocLoading', assocLoading);
             },
           ]}
         />
+      ) : createdIntakeId ? (
+        <Flex direction="column" gap="small">
+          <Text format={{ fontWeight: 'bold' }}>Intake record created successfully.</Text>
+          <Text>Refresh the page to view intake details and access all actions.</Text>
+        </Flex>
       ) : (
         <Flex direction="column" gap="small">
           <Text format={{ fontWeight: 'bold' }}>No intake record associated with this deal.</Text>
-          <Button
-            variant="primary"
-            onClick={async () => {
-              try {
-                const res = await hubspot.fetch(
-                  'https://kkos.developernews.tech/api/v1/intake/create',
-                  {
-                    method: 'POST',
-                    body: {
-                      dealId: String(dealId),
-                      portalId: String(portalId),
-                    },
-                  }
-                );
-
-                let raw = '';
+          <Input
+            label="Entity Name"
+            name="entityName"
+            required={true}
+            value={entityName}
+            onChange={(val) => setEntityName(val)}
+          />
+          <Input
+            label="Intake Name"
+            name="intakeName"
+            required={true}
+            value={intakeName}
+            onChange={(val) => setIntakeName(val)}
+          />
+          {creatingIntake ? (
+            <LoadingSpinner label="Creating intake..." layout="centered" />
+          ) : (
+            <Button
+              variant="primary"
+              disabled={!entityName.trim() || !intakeName.trim()}
+              onClick={async () => {
+                setCreatingIntake(true);
                 try {
-                  raw = await res.text();
-                } catch (e) {
-                  raw = '';
-                }
+                  const res = await hubspot.fetch(
+                    'https://kkos.developernews.tech/api/v1/intake/create',
+                    {
+                      method: 'POST',
+                      body: {
+                        dealId: String(dealId),
+                        entityName: entityName.trim(),
+                        intakeName: intakeName.trim(),
+                      },
+                    }
+                  );
 
-                if (!res.ok) {
-                  const msg = `Server error: ${res.status}${raw ? ` – ${raw}` : ''}`;
-                  throw new Error(msg);
-                }
+                  let raw = '';
+                  try {
+                    raw = await res.text();
+                  } catch (e) {
+                    raw = '';
+                  }
 
-                sendAlert({
-                  type: 'success',
-                  message: 'Intake record created and associated. Refresh the card to continue.',
-                });
-              } catch (err) {
-                console.error(err);
-                sendAlert({ type: 'danger', message: err.message });
-              }
-            }}
-          >
-            Create Intake
-          </Button>
+                  if (!res.ok) {
+                    const msg = `Server error: ${res.status}${raw ? ` – ${raw}` : ''}`;
+                    throw new Error(msg);
+                  }
+
+                  let data = null;
+                  try {
+                    data = raw ? JSON.parse(raw) : null;
+                  } catch (e) {
+                    data = null;
+                  }
+
+                  if (data?.intakeId) {
+                    setCreatedIntakeId(data.intakeId);
+                  }
+
+                  sendAlert({
+                    type: 'success',
+                    message: 'Intake record created and associated.',
+                  });
+                } catch (err) {
+                  console.error(err);
+                  sendAlert({ type: 'danger', message: err.message });
+                } finally {
+                  setCreatingIntake(false);
+                }
+              }}
+            >
+              Create Intake
+            </Button>
+          )}
         </Flex>
       )}
-      <Button
-        variant="primary"
-        disabled={!customerBoxAccountId}
-        onClick={async () => {
-          try {
-            // const res = await hubspot.fetch(
-            //   'https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/generate',
-            //   {
-            //     method: 'POST',
-            //     body: {
-            //       intakeId: String(assocObjId),
-            //       formType: formType,
-            //       entityType,
-            //       docgenFolderId,
-            //       boxFolderId: String(customerBoxAccountId),
-            //     },
-            //   }
-            // );
-            const res = await hubspot.fetch(
-              'https://kkos.developernews.tech/api/v1/intake/packet/generate',
-              {
-                method: 'POST',
-                body: {
-                  intakeId: String(assocObjId),
-                  formType: formType,
-                  entityType,
-                  docgenFolderId,
-                  boxFolderId: String(customerBoxAccountId),
-                },
-              }
-            );
+      {assocObjId && (
+        <>
+          {generatingPacket ? (
+            <LoadingSpinner label="Generating document packet..." layout="centered" />
+          ) : (
+            <Button
+              variant="primary"
+              disabled={!customerBoxAccountId}
+              onClick={async () => {
+                setGeneratingPacket(true);
+                try {
+                  const res = await hubspot.fetch(
+                    'https://kkos.developernews.tech/api/v1/intake/packet/generate',
+                    {
+                      method: 'POST',
+                      body: {
+                        intakeId: String(assocObjId),
+                        formType: formType,
+                        entityType,
+                        docgenFolderId,
+                        boxFolderId: String(customerBoxAccountId),
+                      },
+                    }
+                  );
 
-            // read body once (handles 200/201/204)
-            let raw = '';
-            try {
-              raw = await res.text();
-            } catch (e) {
-              console.log('error', e)
-              raw = '';
-            }
+                  let raw = '';
+                  try {
+                    raw = await res.text();
+                  } catch (e) {
+                    console.log('error', e)
+                    raw = '';
+                  }
 
-            console.log('res', res)
-            if (!res.ok) {
-              const msg = `Server error: ${res.status}${raw ? ` – ${raw}` : ''}`;
-              throw new Error(msg);
-            }
+                  console.log('res', res)
+                  if (!res.ok) {
+                    const msg = `Server error: ${res.status}${raw ? ` – ${raw}` : ''}`;
+                    throw new Error(msg);
+                  }
 
-            let data = null;
-            try {
-              data = raw ? JSON.parse(raw) : null;
-            } catch (e) {
-              data = null; // ignore parse errors on success
-            }
+                  let data = null;
+                  try {
+                    data = raw ? JSON.parse(raw) : null;
+                  } catch (e) {
+                    data = null;
+                  }
 
-            const fileId = data?.file?.id;
-            const fileName = data?.file?.name;
+                  const fileId = data?.file?.id;
+                  const fileName = data?.file?.name;
 
-            sendAlert({
-              type: 'success',
-              message: fileId
-                ? `Document packet created in Box: ${fileName || fileId}`
-                : 'Document packet generated.',
-            });
-          } catch (err) {
-            console.error(err);
-            sendAlert({ type: 'danger', message: err.message });
-          }
-        }}
-      >
-        Generate Document Packet
-      </Button>
-      <Button
-        variant="primary"
-        onClick={async () => {
-          try {
-            // const res = await hubspot.fetch(
-            //   'https://monogrammic-nonideological-everett.ngrok-free.dev/api/v1/intake/packet/signature',
-            //   {
-            //     method: 'POST',
-            //     body: {
-            //       intakeId: String(assocObjId),
-            //       formType,
-            //       documentPacketId,
-            //       boxFolderId: String(customerBoxAccountId),
-            //       envelopeId,
-            //     },
-            //   }
-            // );
-            const res = await hubspot.fetch(
-              'https://kkos.developernews.tech/api/v1/intake/packet/signature',
-              {
-                method: 'POST',
-                body: {
-                  intakeId: String(assocObjId),
-                  formType,
-                  documentPacketId,
-                  boxFolderId: String(customerBoxAccountId),
-                  // envelopeId,
-                },
-              }
-            );
+                  sendAlert({
+                    type: 'success',
+                    message: fileId
+                      ? `Document packet created in Box: ${fileName || fileId}`
+                      : 'Document packet generated.',
+                  });
+                } catch (err) {
+                  console.error(err);
+                  sendAlert({ type: 'danger', message: err.message });
+                } finally {
+                  setGeneratingPacket(false);
+                }
+              }}
+            >
+              Generate Document Packet
+            </Button>
+          )}
+          {requestingSignature ? (
+            <LoadingSpinner label="Requesting signature..." layout="centered" />
+          ) : (
+            <Button
+              variant="primary"
+              onClick={async () => {
+                setRequestingSignature(true);
+                try {
+                  const res = await hubspot.fetch(
+                    'https://kkos.developernews.tech/api/v1/intake/packet/signature',
+                    {
+                      method: 'POST',
+                      body: {
+                        intakeId: String(assocObjId),
+                        formType,
+                        documentPacketId,
+                        boxFolderId: String(customerBoxAccountId),
+                        // envelopeId,
+                      },
+                    }
+                  );
 
-            let raw = '';
-            try {
-              raw = await res.text();
-            } catch (e) {
-              raw = '';
-            }
+                  let raw = '';
+                  try {
+                    raw = await res.text();
+                  } catch (e) {
+                    raw = '';
+                  }
 
-            if (!res.ok) {
-              const msg = `Server error: ${res.status}${raw ? ` – ${raw}` : ''}`;
-              throw new Error(msg);
-            }
+                  if (!res.ok) {
+                    const msg = `Server error: ${res.status}${raw ? ` – ${raw}` : ''}`;
+                    throw new Error(msg);
+                  }
 
-            let data = null;
-            try {
-              data = raw ? JSON.parse(raw) : null;
-            } catch (e) {
-              data = null;
-            }
+                  let data = null;
+                  try {
+                    data = raw ? JSON.parse(raw) : null;
+                  } catch (e) {
+                    data = null;
+                  }
 
-            const fileId = data?.file?.id;
-            const fileName = data?.file?.name;
+                  const fileId = data?.file?.id;
+                  const fileName = data?.file?.name;
 
-            sendAlert({
-              type: 'success',
-              message: 'Document sent for signature.',
-            });
-          } catch (err) {
-            console.error(err);
-            sendAlert({ type: 'danger', message: err.message });
-          }
-        }}
-      >
-        Request Signature(s)
-      </Button>
+                  sendAlert({
+                    type: 'success',
+                    message: 'Document sent for signature.',
+                  });
+                } catch (err) {
+                  console.error(err);
+                  sendAlert({ type: 'danger', message: err.message });
+                } finally {
+                  setRequestingSignature(false);
+                }
+              }}
+            >
+              Request Signature(s)
+            </Button>
+          )}
+        </>
+      )}
       <Divider />
       
       {assocObjId !== null && (
