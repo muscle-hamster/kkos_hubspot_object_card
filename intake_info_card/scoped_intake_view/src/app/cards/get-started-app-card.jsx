@@ -240,7 +240,8 @@ console.log('assocLoading', assocLoading);
       )}
       {assocObjId && (
         <>
-          {generatingPacket ? (
+          {['llc', 'partnership', 'ira_llc', 'dissolution', 'transfer'].includes(formType) && (
+            generatingPacket ? (
             <LoadingSpinner label="Generating document packet..." layout="centered" />
           ) : (
             <Button
@@ -303,8 +304,10 @@ console.log('assocLoading', assocLoading);
             >
               Generate Document Packet
             </Button>
+          )
           )}
-          {requestingSignature ? (
+          {['llc', 'partnership', 'ira_llc', 'dissolution', 'transfer'].includes(formType) && (
+            requestingSignature ? (
             <LoadingSpinner label="Requesting signature..." layout="centered" />
           ) : (
             <Button
@@ -362,6 +365,7 @@ console.log('assocLoading', assocLoading);
             >
               Request Signature(s)
             </Button>
+          )
           )}
         </>
       )}

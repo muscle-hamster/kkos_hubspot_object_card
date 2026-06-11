@@ -12,7 +12,7 @@
     "img": []
   },
   "config": {
-    "name": "Doc Gen App Card",
+    "name": "Intake Card",
     "description": "Provides detailed information about a contact.",
     "entrypoint": "/app/cards/get-started-app-card.jsx",
     "location": "crm.record.tab",
