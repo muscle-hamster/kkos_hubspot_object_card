@@ -1,0 +1,19 @@
+{
+  "uid": "generate_corporate_book_card",
+  "type": "card",
+  "permittedUrls": {
+    "fetch": [
+      "https://f31b-184-60-108-50.ngrok-free.app/api/v1/intake/packet/corporate-book/generate",
+      "https://kkos.developernews.tech/api/v1/intake/packet/corporate-book/generate"
+    ],
+    "iframe": [],
+    "img": []
+  },
+  "config": {
+    "name": "🟣 Corporate Book Generator (new)",
+    "description": "Generates the Corporate Book PDF packet for the intake linked to this ticket.",
+    "entrypoint": "/app/cards/generate-corporate-book.jsx",
+    "location": "crm.record.tab",
+    "objectTypes": ["tickets"]
+  }
+}

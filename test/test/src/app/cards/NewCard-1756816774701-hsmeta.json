@@ -1,0 +1,12 @@
+{
+  "uid": "card-1756816774708-test",
+  "type": "card",
+  "config": {
+    "name": "Example Card",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/NewCard-1756816774701.jsx",
+    "objectTypes": [
+      "contacts"
+    ]
+  }
+}

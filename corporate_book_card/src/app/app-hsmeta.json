@@ -1,0 +1,31 @@
+{
+  "uid": "corporate_book_card_app",
+  "type": "app",
+  "config": {
+    "description": "Ticket-side card that kicks off the Corporate Book document packet build.",
+    "name": "Corporate Book Card",
+    "distribution": "private",
+    "auth": {
+      "type": "static",
+      "requiredScopes": [
+        "tickets"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [
+        "https://f31b-184-60-108-50.ngrok-free.app/api/v1/intake/packet/corporate-book/generate",
+        "https://kkos.developernews.tech/api/v1/intake/packet/corporate-book/generate"
+      ],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "support@example.com",
+      "documentationUrl": "https://example.com/docs",
+      "supportUrl": "https://example.com/support",
+      "supportPhone": "+18005555555"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "generate_corporate_book_card",
+  "version": "0.1.0",
+  "license": "MIT",
+  "dependencies": {
+    "@hubspot/ui-extensions": "^0.10.0"
+  }
+}

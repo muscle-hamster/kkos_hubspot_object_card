@@ -161,82 +161,83 @@ console.log('assocLoading', assocLoading);
           <Text>Refresh the page to view intake details and access all actions.</Text>
         </Flex>
       ) : (
-        <Flex direction="column" gap="small">
-          <Text format={{ fontWeight: 'bold' }}>No intake record associated with this deal.</Text>
-          <Input
-            label="Entity Name"
-            name="entityName"
-            required={true}
-            value={entityName}
-            onChange={(val) => setEntityName(val)}
-          />
-          <Input
-            label="Intake Name"
-            name="intakeName"
-            required={true}
-            value={intakeName}
-            onChange={(val) => setIntakeName(val)}
-          />
-          {creatingIntake ? (
-            <LoadingSpinner label="Creating intake..." layout="centered" />
-          ) : (
-            <Button
-              variant="primary"
-              disabled={!entityName.trim() || !intakeName.trim()}
-              onClick={async () => {
-                setCreatingIntake(true);
-                try {
-                  const res = await hubspot.fetch(
-                    'https://kkos.developernews.tech/api/v1/intake/create',
-                    {
-                      method: 'POST',
-                      body: {
-                        dealId: String(dealId),
-                        entityName: entityName.trim(),
-                        intakeName: intakeName.trim(),
-                      },
-                    }
-                  );
-
-                  let raw = '';
-                  try {
-                    raw = await res.text();
-                  } catch (e) {
-                    raw = '';
-                  }
-
-                  if (!res.ok) {
-                    const msg = `Server error: ${res.status}${raw ? ` – ${raw}` : ''}`;
-                    throw new Error(msg);
-                  }
-
-                  let data = null;
-                  try {
-                    data = raw ? JSON.parse(raw) : null;
-                  } catch (e) {
-                    data = null;
-                  }
-
-                  if (data?.intakeId) {
-                    setCreatedIntakeId(data.intakeId);
-                  }
-
-                  sendAlert({
-                    type: 'success',
-                    message: 'Intake record created and associated.',
-                  });
-                } catch (err) {
-                  console.error(err);
-                  sendAlert({ type: 'danger', message: err.message });
-                } finally {
-                  setCreatingIntake(false);
-                }
-              }}
-            >
-              Create Intake
-            </Button>
-          )}
-        </Flex>
+        <Text format={{ fontWeight: 'bold' }}>No Associated Intake</Text>
+        // <Flex direction="column" gap="small">
+        //   <Text format={{ fontWeight: 'bold' }}>No intake record associated with this deal.</Text>
+        //   <Input
+        //     label="Entity Name"
+        //     name="entityName"
+        //     required={true}
+        //     value={entityName}
+        //     onChange={(val) => setEntityName(val)}
+        //   />
+        //   <Input
+        //     label="Intake Name"
+        //     name="intakeName"
+        //     required={true}
+        //     value={intakeName}
+        //     onChange={(val) => setIntakeName(val)}
+        //   />
+        //   {creatingIntake ? (
+        //     <LoadingSpinner label="Creating intake..." layout="centered" />
+        //   ) : (
+        //     <Button
+        //       variant="primary"
+        //       disabled={!entityName.trim() || !intakeName.trim()}
+        //       onClick={async () => {
+        //         setCreatingIntake(true);
+        //         try {
+        //           const res = await hubspot.fetch(
+        //             'https://kkos.developernews.tech/api/v1/intake/create',
+        //             {
+        //               method: 'POST',
+        //               body: {
+        //                 dealId: String(dealId),
+        //                 entityName: entityName.trim(),
+        //                 intakeName: intakeName.trim(),
+        //               },
+        //             }
+        //           );
+        //
+        //           let raw = '';
+        //           try {
+        //             raw = await res.text();
+        //           } catch (e) {
+        //             raw = '';
+        //           }
+        //
+        //           if (!res.ok) {
+        //             const msg = `Server error: ${res.status}${raw ? ` – ${raw}` : ''}`;
+        //             throw new Error(msg);
+        //           }
+        //
+        //           let data = null;
+        //           try {
+        //             data = raw ? JSON.parse(raw) : null;
+        //           } catch (e) {
+        //             data = null;
+        //           }
+        //
+        //           if (data?.intakeId) {
+        //             setCreatedIntakeId(data.intakeId);
+        //           }
+        //
+        //           sendAlert({
+        //             type: 'success',
+        //             message: 'Intake record created and associated.',
+        //           });
+        //         } catch (err) {
+        //           console.error(err);
+        //           sendAlert({ type: 'danger', message: err.message });
+        //         } finally {
+        //           setCreatingIntake(false);
+        //         }
+        //       }}
+        //     >
+        //       Create Intake
+        //     </Button>
+        //   )}
+        // </Flex>
       )}
       {assocObjId && (
         <>
