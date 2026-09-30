@@ -8,6 +8,8 @@ import {
   Flex,
   ButtonRow,
   LoadingSpinner,
+  Tile,
+  Heading,
   hubspot,
 } from "@hubspot/ui-extensions";
 import { getPropertySet } from './configs/properties.js';
@@ -21,6 +23,24 @@ hubspot.extend(({ context, actions }) => (
     refreshObjectProperties={actions.refreshObjectProperties}
   />
 ));
+
+// Format an ms-epoch timestamp (or ISO string) as a short "in X" relative-time.
+const formatExpiresIn = (expiresAt) => {
+  if (!expiresAt) return null;
+  const ts =
+    typeof expiresAt === "number"
+      ? expiresAt
+      : Date.parse(expiresAt) || Number(expiresAt);
+  if (!ts) return null;
+  const diffMs = ts - Date.now();
+  if (diffMs <= 0) return "shortly";
+  const mins = Math.round(diffMs / 60000);
+  if (mins < 60) return `in ${mins} minute${mins === 1 ? "" : "s"}`;
+  const hours = Math.round(mins / 60);
+  if (hours < 48) return `in ${hours} hour${hours === 1 ? "" : "s"}`;
+  const days = Math.round(hours / 24);
+  return `in ${days} day${days === 1 ? "" : "s"}`;
+};
 
 // helper: split array into chunks of size (≤24 for CrmPropertyList)
 const chunk = (arr, size) => {
@@ -47,6 +67,9 @@ const [createdIntakeId, setCreatedIntakeId] = useState(null);
 const [creatingIntake, setCreatingIntake] = useState(false);
 const [generatingPacket, setGeneratingPacket] = useState(false);
 const [requestingSignature, setRequestingSignature] = useState(false);
+const [mintingPortalLink, setMintingPortalLink] = useState(false);
+const [mintedLinkUrl, setMintedLinkUrl] = useState(null);
+const [mintedLinkExpiresAt, setMintedLinkExpiresAt] = useState(null);
 
   // Get CRM properties
   const { properties, isLoading, error } = useCrmProperties(['intake_name', 'intake_form_type', 'dealname']);
@@ -73,6 +96,28 @@ const [requestingSignature, setRequestingSignature] = useState(false);
     ],
     limit: 50,
   });
+
+  const { results: contactAssocResults = [] } = useAssociations({
+    toObjectType: 'contacts',
+    properties: [
+      'email',
+      'hs_object_id',
+      'firstname',
+      'lastname',
+      'hs_marketable_status',
+      'portal_magic_link_url',
+      'portal_magic_link_expires_at',
+    ],
+    limit: 50,
+  });
+
+  const isMarketable = (contact) => {
+    const raw = String(contact?.properties?.hs_marketable_status ?? '').toLowerCase();
+    return raw === 'true' || raw === 'marketing_contact';
+  };
+
+  const primaryContact =
+    contactAssocResults.find(isMarketable) || contactAssocResults[0] || null;
 
   // safe guards
   let formType = null, entityType = null, documentPacketId = null,
@@ -368,6 +413,127 @@ console.log('assocLoading', assocLoading);
             </Button>
           )
           )}
+          {formType === 'epq' && (() => {
+            const first = primaryContact?.properties?.firstname || '';
+            const last = primaryContact?.properties?.lastname || '';
+            const name = [first, last].filter(Boolean).join(' ').trim();
+            const email = primaryContact?.properties?.email || '';
+            const label = name && email
+              ? `${name} <${email}>`
+              : (name || email || 'No associated contact');
+
+            const displayLinkUrl =
+              mintedLinkUrl || primaryContact?.properties?.portal_magic_link_url || null;
+            const displayLinkExpiresAt =
+              mintedLinkExpiresAt ||
+              primaryContact?.properties?.portal_magic_link_expires_at ||
+              null;
+            const displayExpiresIn = formatExpiresIn(displayLinkExpiresAt);
+
+            return (
+              <Tile>
+                <Flex direction="column" gap="medium">
+                  <Flex direction="column" gap="extra-small">
+                    <Heading>Customer Portal</Heading>
+                    <Text variant="microcopy">For: {label}</Text>
+                  </Flex>
+                  <Button
+                    variant="primary"
+                    disabled={mintingPortalLink || !primaryContact}
+                    onClick={async () => {
+                setMintingPortalLink(true);
+                try {
+                  if (!primaryContact) {
+                    throw new Error(
+                      'This intake has no associated contact — associate a contact in HubSpot and try again.'
+                    );
+                  }
+
+                  const contactId = String(
+                    primaryContact?.properties?.hs_object_id ?? primaryContact?.id ?? ''
+                  );
+                  const email = primaryContact?.properties?.email || '';
+
+                  if (!contactId) {
+                    throw new Error(
+                      "Couldn't resolve the associated contact's HubSpot ID."
+                    );
+                  }
+
+                  const res = await hubspot.fetch(
+                    `https://kkos.developernews.tech/api/v1/portal/contact/${contactId}/mint-from-card`,
+                    {
+                      method: 'POST',
+                      body: email ? { email } : {},
+                    }
+                  );
+
+                  let raw = '';
+                  try { raw = await res.text(); } catch (_e) { raw = ''; }
+                  let body = null;
+                  try { body = raw ? JSON.parse(raw) : null; } catch (_e) { body = null; }
+
+                  if (!res.ok) {
+                    throw new Error(
+                      body?.message ||
+                        `Mint failed (${res.status})${raw ? `: ${raw.slice(0, 300)}` : ''}`
+                    );
+                  }
+
+                  const expiresIn = formatExpiresIn(body?.expires_at);
+
+                  if (body?.url) {
+                    setMintedLinkUrl(body.url);
+                    setMintedLinkExpiresAt(body.expires_at || null);
+                  }
+
+                  if (body?.dedupe_used) {
+                    sendAlert({
+                      type: 'info',
+                      message:
+                        'A link was generated within the last minute — reused the existing one on the contact.',
+                    });
+                  } else {
+                    sendAlert({
+                      type: 'success',
+                      message: `Portal link saved to the customer's contact record${
+                        expiresIn ? ` (expires ${expiresIn})` : ''
+                      }.`,
+                    });
+                  }
+                } catch (err) {
+                  console.error(err);
+                  sendAlert({ type: 'danger', message: err.message });
+                } finally {
+                  setMintingPortalLink(false);
+                }
+              }}
+            >
+                    {mintingPortalLink ? 'Sending…' : 'Generate Portal Link'}
+                  </Button>
+                  {displayLinkUrl && (
+                    <>
+                      <Divider />
+                      <Flex direction="column" gap="extra-small">
+                        <Text format={{ fontWeight: 'bold' }}>
+                          Portal link{displayExpiresIn ? ` (expires ${displayExpiresIn})` : ''}
+                        </Text>
+                        <Link href={displayLinkUrl} preventDefault={false} external>
+                          Open portal link
+                        </Link>
+                        <Input
+                          readOnly
+                          label="Copy URL"
+                          name="portal_magic_link_url"
+                          value={displayLinkUrl}
+                        />
+                      </Flex>
+                    </>
+                  )}
+                </Flex>
+              </Tile>
+            );
+          })()}
         </>
       )}
       <Divider />

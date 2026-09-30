@@ -1,181 +1,56 @@
-const BASE = [
-  'hs_createdate',
-  'hs_lastmodifieddate',
-  'hs_object_id',
-  'intake_name',
+// Core + automation properties are shown for all form types
+// (spec: "any but Solo K and Future EPQ" — neither exists as an
+// intake_form_type option today, so this effectively means all).
+const CORE = [
+  'entity_name',
   'intake_form_type',
-  'entity_type',
+  'entity_state_of_registration',
+  'msbs_services',
+  'notes',
+  'billing_notes',
+];
+
+const AUTOMATION = [
   'document_packet_id',
   'customer_box_account_id',
-  'billing_notes',
-]
+];
+
+const BASE = [...CORE, ...AUTOMATION];
+
+const ENTITY_FORMATION_SPECIFICS = [
+  'entity_taxation',
+  'registered_agent_name',
+  'deed_transfer_needed',
+  'entity_foreign_states_of_registration',
+];
 
 export const PROPERTY_SETS = {
   llc: {
-    properties: [
-      ...BASE,
-      'tax_advisor_company',
-      'tax_advisor_email',
-      'tax_advisor_name',
-      'effective_date',
-      'entity_name',
-      'entity_state_of_registration',
-      'entity_business_purpose',
-      'physical_addr_line1',
-      'physical_addr_line2',
-      'physical_addr_city',
-      'physical_addr_state',
-      'physical_addr_postal',
-      'mailing_addr_line1',
-      'mailing_addr_line2',
-      'mailing_addr_city',
-      'mailing_addr_state',
-      'mailing_addr_postal',
-      'deed_transfer_needed',
-      'msbs_services',
-      'msbs_already_paid',
-      'registered_agent_name',
-      'registered_agent_email',
-      'registered_agent_phone',
-      'registered_agent_addr_line1',
-      'registered_agent_addr_line2',
-      'registered_agent_addr_city',
-      'registered_agent_addr_state',
-      'registered_agent_addr_postal',
-      'notes',
-    ]
+    properties: [...BASE, ...ENTITY_FORMATION_SPECIFICS],
+  },
+  llc_401k: {
+    properties: [...BASE],
   },
   ira_llc: {
-    properties: [
-      ...BASE,
-      'effective_date',
-      'entity_name',
-      'entity_state_of_registration',
-      'entity_business_purpose',
-      'physical_addr_line1',
-      'physical_addr_line2',
-      'physical_addr_city',
-      'physical_addr_state',
-      'physical_addr_postal',
-      'deed_transfer_needed',
-      'msbs_services',
-      'msbs_already_paid',
-      'registered_agent_name',
-      'registered_agent_email',
-      'registered_agent_phone',
-      'registered_agent_addr_line1',
-      'registered_agent_addr_line2',
-      'registered_agent_addr_city',
-      'registered_agent_addr_state',
-      'registered_agent_addr_postal',
-      'notes',
-    ]
+    properties: [...BASE, ...ENTITY_FORMATION_SPECIFICS],
   },
   partnership: {
-    properties: [
-      ...BASE,
-      'tax_advisor_company',
-      'tax_advisor_email',
-      'effective_date',
-      'entity_name',
-      'entity_state_of_registration',
-      'entity_business_purpose',
-      'entity_phone',
-      'entity_email',
-      'physical_addr_line1',
-      'physical_addr_line2',
-      'physical_addr_city',
-      'physical_addr_state',
-      'physical_addr_postal',
-      'mailing_addr_line1',
-      'mailing_addr_line2',
-      'mailing_addr_city',
-      'mailing_addr_state',
-      'mailing_addr_postal',
-      'deed_transfer_needed',
-      'msbs_services',
-      'msbs_already_paid',
-      'registered_agent_name',
-      'registered_agent_email',
-      'registered_agent_phone',
-      'registered_agent_addr_line1',
-      'registered_agent_addr_line2',
-      'registered_agent_addr_city',
-      'registered_agent_addr_state',
-      'registered_agent_addr_postal',
-      'notes',
-    ]
+    properties: [...BASE, ...ENTITY_FORMATION_SPECIFICS],
   },
   dissolution: {
-    properties: [
-      ...BASE,
-      'entity_name',
-      'entity_type',
-      'entity_state_of_registration',
-      'ein',
-      'physical_addr_line1',
-      'physical_addr_line2',
-      'physical_addr_city',
-      'physical_addr_state',
-      'physical_addr_postal',
-      'mailing_addr_line1',
-      'mailing_addr_line2',
-      'mailing_addr_city',
-      'mailing_addr_state',
-      'mailing_addr_postal',
-      'notes',
-    ]
+    properties: [...BASE],
   },
   entity_clean_up: {
     properties: [
       ...BASE,
-      'entity_name',
-      'entity_phone',
-      'entity_email',
-      'entity_state_of_registration',
-      'effective_date',
-      'ein',
-      'prior_entity_names',
-      'requested_selection_date',
       'entity_taxation',
-      'last_year_filed',
-      'entity_business_purpose',
-      'physical_addr_line1',
-      'physical_addr_line2',
-      'physical_addr_city',
-      'physical_addr_state',
-      'physical_addr_postal',
-      'mailing_addr_line1',
-      'mailing_addr_line2',
-      'mailing_addr_city',
-      'mailing_addr_state',
-      'mailing_addr_postal',
-      'deed_transfer_needed',
-      'additional_services',
-      'msbs_services',
-      'msbs_already_paid',
-      'registered_agent_name',
-      'registered_agent_email',
-      'registered_agent_phone',
-      'registered_agent_addr_line1',
-      'registered_agent_addr_line2',
-      'registered_agent_addr_city',
-      'registered_agent_addr_state',
-      'registered_agent_addr_postal',
-      'notes',
-    ]
+      'entity_foreign_states_of_registration',
+    ],
   },
   transfer: {
-    properties: [
-      ...BASE,
-      'contact_full_name',
-      'contact_email',
-      'contact_type',
-      'ownership_percentage',
-      'new_member',
-    ]
-  }
-}
+    properties: [...BASE, 'entity_taxation'],
+  },
+};
 
 export function getPropertySet(formType) {
   return PROPERTY_SETS[formType] ?? PROPERTY_SETS.default;
